@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8"/>
+		<script type="text/javascript" src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+		<link rel="stylesheet" type='text/css' href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css"/>
+		<link rel='stylesheet' type='text/css' href='https://fonts.googleapis.com/css?family=Fira+Sans:400,400italic'/>
+		<style type="text/css">
+			html, body {
+				margin: 0;
+				padding: 0;
+				height: 100%;
+			}
+			body, button {
+				font-family: 'Fira Sans', sans-serif;
+			}
+			i {
+				margin: 5px;
+				margin-bottom: 0;
+			}
+			div.popup {
+				font-size: 3em;
+				line-height: 1.1em;
+				text-align: center;
+				font-style: italic;
+				visibility: hidden;
+				width: 100%;
+				height: 100%;
+				display: -webkit-flex;
+				display: flex;
+				-webkit-flex-direction: column;
+				flex-direction: column;
+				-webkit-justify-content: center;
+				justify-content: center;
+				-webkit-align-items: center;
+				align-items: center;
+				position: absolute;
+				background-color: #7212B2;
+			}
+			div.popup button {
+				font-size: 1em;
+				border: none;
+				border-radius: 10px;
+				margin-top: 0.8em;
+				padding: 0.1em 0.8em;
+				background-color: #1485CC;
+			}
+			div.meters {
+				display: -webkit-flex;
+				display: flex;
+				-webkit-flex-direction: row;
+				flex-direction: row;
+				-webkit-justify-content: space-between;
+				justify-content: space-between;
+				font-size: 2em;
+				background-color: #0A7BC2;
+				border-bottom: 1px solid #054D7A;
+			}
+			div.grid {
+				width: 100%;
+				height: 100%;
+				display: -webkit-flex;
+				display: flex;
+				-webkit-flex-direction: column;
+				flex-direction: column;
+			}
+			div.row {
+				display: -webkit-flex;
+				display: flex;
+				-webkit-flex-grow: 1;
+				flex-grow: 1;
+				-webkit-flex-direction: row;
+				flex-direction: row;
+			}
+			div.cell {
+				flex-grow: 1;
+				-webkit-flex-grow: 1;
+				border: 1px solid #0971B2;
+				background-color: #1485CC;
+				-webkit-transition: all 0.2s;
+				-moz-transition: all 0.2s;
+				-ms-transition: all 0.2s;
+				-o-transition: all 0.2s;
+				transition: all 0.2s;
+			}
+			div.cell.target {
+				background-color: #FFFC19;
+			}
+			.target-color {
+				color: #FFFC19;
+			}
+			div.cell.distractor {
+				background-color: orange;
+			}
+			div.cell.touched {
+				background-color: #F06565;
+				-webkit-transition: all 0s;
+				-moz-transition: all 0s;
+				-ms-transition: all 0s;
+				-o-transition: all 0s;
+				transition: all 0s;
+			}
+			div.cell.target.touched {
+				background-color: #16A216;
+			}
+		</style>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
+		<script type="text/javascript">
+			$.fn.random = function() {
+				var index = Math.floor(Math.random() * this.length);
+				return $(this[index]);
+			};
+			var score = 0;
+			var start = undefined;
+			var latencies = [];
+			var average = undefined;
+			var targets = 1;
+			var distractors = 0;
+			function reset() {
+				score = 0;
+				latencies = [];
+				average = undefined;
+				targets = 1;
+				distractors = 0;
+				draw();
+				countdown();
+				resume();
+			}
+			function next(correct) {
+				if (correct) reward();
+				else penalize();
+				estimate(correct);
+				complicate();
+				draw();
+				if (correct) start = new Date().getTime();
+			}
+			function estimate() {
+				latencies.push(new Date().getTime() - start);
+				if (latencies.length > 5) latencies.shift();
+				average = latencies.reduce(function(a, b) { return a + b }) / latencies.length;
+			}
+			function reward() {
+				score += 100 * Math.pow(5, Math.floor(targets) - 1) + Math.floor(distractors) * 10;
+				$('.score').text(score);
+			}
+			function penalize() {
+				pause('miss');
+				score = Math.max(score - 1000, 0);
+				$('.score').text(score);
+			}
+			function complicate() {
+				if (average < 650) {
+					targets = Math.min(targets + 0.3, 4);
+					if (targets >= 2) pause('double');
+					else pause('levelup');
+					distractors = Math.min(distractors + 1, 7);
+				} else if (average > 700) {
+					targets = Math.max(targets - 0.3, 1);
+					distractors = Math.max(distractors - 1, 0);
+				}
+			}
+			function pause(popup) {
+				if (!window.localStorage[popup]) {
+					$('#' + popup).css('visibility', 'visible');
+					if (popup != 'over') window.localStorage[popup] = true;
+				}
+			}
+			function resume() {
+				$('.popup').css('visibility', 'hidden');
+				start = new Date().getTime();
+			}
+			function draw() {
+				$('.cell').removeClass('target distractor touched');
+				for (var i=0; i<Math.floor(targets); i++) {
+					$('.cell:not(.target)').random().addClass('target');
+				}
+				for (var i=0; i<Math.floor(distractors); i++) {
+					$('.cell:not(.target):not(.distractor)').random().addClass('distractor');
+				}
+			}
+			function bind() {
+				var touchTimer = undefined;
+				$('.grid').on('touchstart', function(event) {
+					event.preventDefault();
+					if (!touchTimer) touchTimer = window.setTimeout(function() {
+						touchTimer = undefined;
+						next($('.cell.target:not(.touched)').length==0 && $('.cell.touched:not(.target)').length==0);
+					}, 50);
+					for (var i=0; i<event.originalEvent.touches.length; i++) {
+						$(event.originalEvent.touches[i].target).addClass('touched');
+					}
+				});
+			}
+			function countdown() {
+				var time = 60;
+				$('#time').text(time);
+				$('.score').text(0);
+				$('#hourglass').removeClass('fa-hourglass-start fa-hourglass-half fa-hourglass-end').addClass('fa-hourglass-start');
+				var gameEnd = new Date().getTime() + time * 1000;
+				var gameTimer = window.setInterval(function() {
+					var left = Math.floor((gameEnd - new Date().getTime()) / 1000);
+					$('#time').text(left);
+					var gl = left > time*2/3 ? 'start' : left > time/3 ? 'half' : 'end';
+					$('#hourglass').removeClass('fa-hourglass-start fa-hourglass-half fa-hourglass-end').addClass('fa-hourglass-' + gl);
+					if (left <= 0) {
+						window.clearTimeout(gameTimer);
+						pause('over');
+					}
+				}, 1000);
+			}
+			$(function() {
+				bind();
+				reset();
+				pause('init');
+			})
+		</script>
+	</head>
+	<body>
+		<div id="init" class="popup">
+			<span>Tap on the <span class="target-color">yellow</span> cells as fast as you can.</span>
+			<button onclick="resume()">Got it!</button>
+		</div>
+		<div id="miss" class="popup">
+			<span>When you miss, you lose points and momentum.</span>
+			<button onclick="resume()">Woah, OK!</button>
+		</div>
+		<div id="levelup" class="popup">
+			<span>The faster you go, the harder it gets, the more points.</span>
+			<button onclick="resume()">Awesome</button>
+		</div>
+		<div id="double" class="popup">
+			<span>Don’t forget, all yellow cells have to be tapped simultaneously.</span>
+			<button onclick="resume()">Let me play!</button>
+		</div>
+		<div id="over" class="popup">
+			<span>Game over! You scored <span class="score"></span>&nbsp;points.</span>
+			<button onclick="reset()">Play again!</button>
+		</div>
+		<div class="grid">
+			<div class="meters">
+				<div>
+					<i id="hourglass" class="fa fa-hourglass-start"></i><span id="time"></span>
+				</div>
+				<div>
+					<span class="score"></span><i class="fa fa-trophy"></i>
+				</div>
+			</div>
+			<div class="row"><div class="cell"></div><div class="cell"></div><div class="cell"></div></div>
+			<div class="row"><div class="cell"></div><div class="cell"></div><div class="cell"></div></div>
+			<div class="row"><div class="cell"></div><div class="cell"></div><div class="cell"></div></div>
+			<div class="row"><div class="cell"></div><div class="cell"></div><div class="cell"></div></div>
+		</div>
+	</body>
+</html>
+
