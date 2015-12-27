@@ -170,10 +170,12 @@
 				start = new Date().getTime();
 			}
 			function draw() {
+				$('.cell.target').addClass('oldtarget');
 				$('.cell').removeClass('target distractor touched');
 				for (var i=0; i<Math.floor(targets); i++) {
-					$('.cell:not(.target)').random().addClass('target');
+					$('.cell:not(.target):not(.oldtarget)').random().addClass('target');
 				}
+				$('.cell.oldtarget').removeClass('oldtarget');
 				for (var i=0; i<Math.floor(distractors); i++) {
 					$('.cell:not(.target):not(.distractor)').random().addClass('distractor');
 				}
