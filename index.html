@@ -26,6 +26,8 @@
 				visibility: hidden;
 				width: 100%;
 				height: 100%;
+				box-sizing: border-box;
+				padding: 0 0.5em;
 				display: -webkit-flex;
 				display: flex;
 				-webkit-flex-direction: column;
@@ -35,15 +37,18 @@
 				-webkit-align-items: center;
 				align-items: center;
 				position: absolute;
-				background-color: #7212B2;
+				color: #EDEDED;
+				background-color: #1485CC;
 			}
 			div.popup button {
 				font-size: 1em;
+				line-height: 1.1em;
 				border: none;
 				border-radius: 10px;
 				margin-top: 0.8em;
 				padding: 0.1em 0.8em;
-				background-color: #1485CC;
+				color: #0A7BC2;
+				background-color: #FFFC19;
 			}
 			div.meters {
 				display: -webkit-flex;
@@ -53,8 +58,9 @@
 				-webkit-justify-content: space-between;
 				justify-content: space-between;
 				font-size: 2em;
+				color: #EDEDED;
 				background-color: #0A7BC2;
-				border-bottom: 1px solid #054D7A;
+				border-bottom: 1px solid #0971B2;
 			}
 			div.grid {
 				width: 100%;
@@ -171,7 +177,7 @@
 			}
 			function draw() {
 				$('.cell.target').addClass('oldtarget');
-				$('.cell').removeClass('target distractor touched');
+				clear();
 				for (var i=0; i<Math.floor(targets); i++) {
 					$('.cell:not(.target):not(.oldtarget)').random().addClass('target');
 				}
@@ -179,6 +185,9 @@
 				for (var i=0; i<Math.floor(distractors); i++) {
 					$('.cell:not(.target):not(.distractor)').random().addClass('distractor');
 				}
+			}
+			function clear() {
+				$('.cell').removeClass('target distractor touched');
 			}
 			function bind() {
 				var touchTimer = undefined;
@@ -191,6 +200,9 @@
 					for (var i=0; i<event.originalEvent.touches.length; i++) {
 						$(event.originalEvent.touches[i].target).addClass('touched');
 					}
+				});
+				$(document).on('touchmove', function(event) {
+					event.preventDefault();
 				});
 			}
 			function countdown() {
@@ -206,6 +218,7 @@
 					$('#hourglass').removeClass('fa-hourglass-start fa-hourglass-half fa-hourglass-end').addClass('fa-hourglass-' + gl);
 					if (left <= 0) {
 						window.clearTimeout(gameTimer);
+						clear();
 						pause('over');
 					}
 				}, 1000);
@@ -229,14 +242,14 @@
 		</div>
 		<div id="levelup" class="popup">
 			<span>The quicker you become, the harder it gets, the more points.</span>
-			<button onclick="resume()">Awesome</button>
+			<button onclick="resume()">Awesome!</button>
 		</div>
 		<div id="double" class="popup">
-			<span>Don’t forget, all yellow cells have to be tapped simultaneously.</span>
-			<button onclick="resume()">Let me play!</button>
+			<span>Don’t forget, all <span class="target-color">yellow</span> cells have to be tapped simultaneously.</span>
+			<button onclick="resume()">Argh, just<br/>let me<br/>play!</button>
 		</div>
 		<div id="over" class="popup">
-			<span>Game over! You scored <span class="score"></span>&nbsp;points.</span>
+			<span>Time’s up!<br/>You scored <span class="score target-color"></span>&nbsp;points.</span>
 			<button onclick="reset()">Play again!</button>
 		</div>
 		<div class="grid">
