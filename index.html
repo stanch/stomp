@@ -214,12 +214,13 @@
 				bind();
 				reset();
 				pause('init');
+				setTimeout(function() { pause('levelup') }, 10000);
 			})
 		</script>
 	</head>
 	<body>
 		<div id="init" class="popup">
-			<span>Tap on the <span class="target-color">yellow</span> cells as fast as you can.</span>
+			<span>Tap once on each <span class="target-color">yellow</span> cell.</span>
 			<button onclick="resume()">Got it!</button>
 		</div>
 		<div id="miss" class="popup">
@@ -227,7 +228,7 @@
 			<button onclick="resume()">Woah, OK!</button>
 		</div>
 		<div id="levelup" class="popup">
-			<span>The faster you go, the harder it gets, the more points.</span>
+			<span>The quicker you become, the harder it gets, the more points.</span>
 			<button onclick="resume()">Awesome</button>
 		</div>
 		<div id="double" class="popup">
