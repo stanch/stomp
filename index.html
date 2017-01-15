@@ -20,8 +20,6 @@
 		<title>stomp</title>
 		<script type="text/javascript" src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
 		<link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css"/>
-		<script src="https://use.typekit.net/itu2oxk.js"></script>
-		<script>try{Typekit.load({ async: true });}catch(e){}</script>
 		<link rel="shortcut icon" type="image/png" href="icon.png"/>
 		<link rel="shortcut icon" sizes="128x128" href="icon.png"/>
 		<link rel="apple-touch-icon" href="icon.png"/>
@@ -32,7 +30,7 @@
 				height: 100%;
 			}
 			body, button {
-				font-family: 'ff-enzo-web', sans-serif;
+				font-family: sans-serif;
 				font-weight: 600;
 			}
 			i {
@@ -166,16 +164,17 @@
 		<meta name="mobile-web-app-capable" content="yes"/>
 		<meta name="apple-mobile-web-app-status-bar-style" content="black"/>
 		<script type="text/javascript">
+			"use strict";
 			$.fn.random = function() {
-				var index = Math.floor(Math.random() * this.length);
+				const index = Math.floor(Math.random() * this.length);
 				return $(this[index]);
 			};
-			var score = 0;
-			var start = undefined;
-			var latencies = [];
-			var average = undefined;
-			var targets = 1;
-			var distractors = 0;
+			let score = 0;
+			let start = undefined;
+			let latencies = [];
+			let average = undefined;
+			let targets = 1;
+			let distractors = 0;
 			function reset() {
 				score = 0;
 				latencies = [];
@@ -186,33 +185,35 @@
 				countdown();
 				resume();
 			}
-			function next(correct) {
-				if (correct) reward();
-				else penalize();
-				estimate(correct);
-				complicate();
-				draw();
-				if (correct) start = new Date().getTime();
+			function advance() {
+				const correct = $('.cell.target:not(.touched)').length==0 && $('.cell.touched:not(.target)').length==0;
+				$('.cell').removeClass('touched');
+				if (!correct) {
+					penalize();
+				} else {
+					reward();
+					estimate();
+					complicate();
+					draw();
+					start = new Date().getTime();
+				}
 			}
 			function estimate() {
 				latencies.push(new Date().getTime() - start);
 				if (latencies.length > 5) latencies.shift();
-				average = latencies.reduce(function(a, b) { return a + b }) / latencies.length;
+				average = latencies.reduce((a, b) => a + b) / latencies.length;
 			}
 			function reward() {
 				score += 100 * Math.pow(5, Math.floor(targets) - 1) + Math.floor(distractors) * 10;
 				$('.score').text(score);
 			}
 			function penalize() {
-				popup('miss');
-				score = Math.max(score - 1000, 0);
+				score = Math.max(score - 10, 0);
 				$('.score').text(score);
 			}
 			function complicate() {
 				if (average < 650) {
 					targets = Math.min(targets + 0.3, 4);
-					if (targets >= 2) popup('double');
-					else popup('levelup');
 					distractors = Math.min(distractors + 1, 7);
 				} else if (average > 700) {
 					targets = Math.max(targets - 0.3, 1);
@@ -232,11 +233,11 @@
 			function draw() {
 				$('.cell.target').addClass('oldtarget');
 				clear();
-				for (var i=0; i<Math.floor(targets); i++) {
+				for (let i=0; i<Math.floor(targets); i++) {
 					$('.cell:not(.target):not(.oldtarget)').random().addClass('target');
 				}
 				$('.cell.oldtarget').removeClass('oldtarget');
-				for (var i=0; i<Math.floor(distractors); i++) {
+				for (let i=0; i<Math.floor(distractors); i++) {
 					$('.cell:not(.target):not(.distractor)').random().addClass('distractor');
 				}
 			}
@@ -244,31 +245,29 @@
 				$('.cell').removeClass('target distractor touched');
 			}
 			function bind() {
-				var touchTimer = undefined;
-				$('.grid').on('touchstart', function(event) {
+				let touchTimer = undefined;
+				$('.grid').on('touchstart', event => {
 					event.preventDefault();
-					if (!touchTimer) touchTimer = window.setTimeout(function() {
+					if (!touchTimer) touchTimer = window.setTimeout(() => {
 						touchTimer = undefined;
-						next($('.cell.target:not(.touched)').length==0 && $('.cell.touched:not(.target)').length==0);
+						advance();
 					}, 50);
-					for (var i=0; i<event.originalEvent.touches.length; i++) {
+					for (let i=0; i<event.originalEvent.touches.length; i++) {
 						$(event.originalEvent.touches[i].target).addClass('touched');
 					}
 				});
-				$(document).on('touchmove', function(event) {
-					event.preventDefault();
-				});
+				$(document).on('touchmove', event => event.preventDefault());
 			}
 			function countdown() {
-				var time = 60;
+				const time = 60;
 				$('#time').text(time);
 				$('.score').text(score);
 				$('#hourglass').removeClass('fa-hourglass-start fa-hourglass-half fa-hourglass-end').addClass('fa-hourglass-start');
-				var gameEnd = new Date().getTime() + time * 1000;
-				var gameTimer = window.setInterval(function() {
-					var left = Math.floor((gameEnd - new Date().getTime()) / 1000);
+				const gameEnd = new Date().getTime() + time * 1000;
+				const gameTimer = window.setInterval(() => {
+					const left = Math.floor((gameEnd - new Date().getTime()) / 1000);
 					$('#time').text(left);
-					var gl = left > time*2/3 ? 'start' : left > time/3 ? 'half' : 'end';
+					const gl = left > time*2/3 ? 'start' : left > time/3 ? 'half' : 'end';
 					$('#hourglass').removeClass('fa-hourglass-start fa-hourglass-half fa-hourglass-end').addClass('fa-hourglass-' + gl);
 					if (left <= 0) {
 						window.clearTimeout(gameTimer);
@@ -285,8 +284,6 @@
 				if (window.localStorage['forceTouch'] || 'ontouchstart' in window || navigator.maxTouchPoints) {
 					bind();
 					reset();
-					popup('init');
-					setTimeout(function() { popup('levelup') }, 10000);
 				} else {
 					popup('notouch', true);
 				}
@@ -302,22 +299,6 @@
 		</script>
 	</head>
 	<body>
-		<div id="levelup" class="popup">
-			<span>The quicker you become, the harder it gets, the more points.</span>
-			<button onclick="resume()">Awesome!</button>
-		</div>
-		<div id="miss" class="popup">
-			<span>When you miss, you lose points and momentum.</span>
-			<button onclick="resume()">Woah, OK!</button>
-		</div>
-		<div id="init" class="popup">
-			<span>Tap once on each <span class="target-color">yellow</span> cell.</span>
-			<button onclick="resume()">Got it!</button>
-		</div>
-		<div id="double" class="popup">
-			<span>When you see multiple <span class="target-color">yellow</span> cells, tap on them at the same time.</span>
-			<button onclick="resume()">I’m ready!</button>
-		</div>
 		<div id="notouch" class="popup">
 			<span>This game only works with multi-touch,<br/>but it looks like you don’t have a touchscreen <i class="fa fa-frown-o"></i></span>
 			<button onclick="forceTouch()">Lies, I do!</button>
