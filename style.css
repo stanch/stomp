@@ -4,6 +4,7 @@ html, body {
     height: 100%;
     overflow: hidden;
     overscroll-behavior: none;
+    touch-action: none;
 }
 body, button {
     font-family: sans-serif;
